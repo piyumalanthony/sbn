@@ -1,6 +1,6 @@
 import numpy as np
 from Bio import Phylo
-from cStringIO import StringIO
+from io import StringIO
 from ete3 import Tree
 import copy
 from collections import defaultdict

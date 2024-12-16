@@ -33,7 +33,7 @@ class SBN:
             self.emp_tree_freq = emp_tree_freq
 
         # TODO: consider having this be calculated on the fly, in case emp_tree_freq is silently altered.
-        self.negDataEnt = np.sum([wts * np.log(wts + EPS) for wts in self.emp_tree_freq.values()])
+        self.negDataEnt = np.sum([wts * np.log(wts + EPS) for wts in list(self.emp_tree_freq.values())])
 
         self.samp_tree_freq = defaultdict(float)
 
@@ -119,11 +119,11 @@ class SBN:
         clade_bipart_dict[clade][.] (sum of subsplit probabilities) next to
         clade_dict[clade] (clade probabilities) which should be equal.
         """
-        print "clade_dict sum: {:.12f}".format(sum(self.clade_dict.values()))
-        print "clade_bipart_dict tabular sum:"
+        print("clade_dict sum: {:.12f}".format(sum(list(self.clade_dict.values()))))
+        print("clade_bipart_dict tabular sum:")
         for key in self.clade_bipart_dict:
             bipart_bitarr = self._minor_bitarr(bitarray(key))
-            print '{}:{:.12f}|{:.12f}'.format(bipart_bitarr.to01(), sum(self.clade_bipart_dict[key].values()), self.clade_dict[bipart_bitarr.to01()])
+            print('{}:{:.12f}|{:.12f}'.format(bipart_bitarr.to01(), sum(list(self.clade_bipart_dict[key].values())), self.clade_dict[bipart_bitarr.to01()]))
 
     def check_clade_dict_em(self):
         """Print and compare summary statistics for each subsplit.
@@ -135,19 +135,19 @@ class SBN:
         clade_bipart_dict[union(subsplit)][subsplit] (if it is not at the root)
         which should be equal.
         """
-        print "clade_dict sum: {:.12f}".format(sum(self.clade_dict.values()))
-        print "clade_double_bipart_dict tabular sum:"
+        print("clade_dict sum: {:.12f}".format(sum(list(self.clade_dict.values()))))
+        print("clade_double_bipart_dict tabular sum:")
         for key in self.clade_double_bipart_dict:
             parent_clade_bitarr = self._merge_bitarr(key)
             bipart_bitarr = self._decomp_minor_bitarr(key)
             if parent_clade_bitarr.count() != self.ntaxa:
-                print '{}|{}:{:.12f}|{:.12f}'.format(parent_clade_bitarr.to01(), bipart_bitarr.to01(),
-                                                     sum(self.clade_double_bipart_dict[key].values()),
-                                                     self.clade_bipart_dict[parent_clade_bitarr.to01()][bipart_bitarr.to01()])
+                print('{}|{}:{:.12f}|{:.12f}'.format(parent_clade_bitarr.to01(), bipart_bitarr.to01(),
+                                                     sum(list(self.clade_double_bipart_dict[key].values())),
+                                                     self.clade_bipart_dict[parent_clade_bitarr.to01()][bipart_bitarr.to01()]))
             else:
-                print '{}|{}:{:.12f}|{:.12f}'.format(parent_clade_bitarr.to01(), bipart_bitarr.to01(),
-                                                     sum(self.clade_double_bipart_dict[key].values()),
-                                                     self.clade_dict[bipart_bitarr.to01()])
+                print('{}|{}:{:.12f}|{:.12f}'.format(parent_clade_bitarr.to01(), bipart_bitarr.to01(),
+                                                     sum(list(self.clade_double_bipart_dict[key].values())),
+                                                     self.clade_dict[bipart_bitarr.to01()]))
 
     def logprior(self):
         """Calculate the Dirichlet conjugate prior, namely the two summation
@@ -161,13 +161,13 @@ class SBN:
         ]) + sum([
             self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()] /
             len(self.clade_double_bipart_dict[key]) * np.sum(
-                np.log((np.array(self.clade_double_bipart_dict[key].values()) + self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(
+                np.log((np.array(list(self.clade_double_bipart_dict[key].values())) + self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(
                     key).to01()][self._decomp_minor_bitarr(key).to01()] / len(self.clade_double_bipart_dict[key])) /
                        (self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()] +
                         self.clade_bipart_dict[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()])))
             if self._merge_bitarr(key).to01() != '1' * self.ntaxa else self.alpha *
             self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] / len(self.clade_double_bipart_dict[key]) * np.sum(
-                np.log((np.array(self.clade_double_bipart_dict[key].values()) + self.alpha *
+                np.log((np.array(list(self.clade_double_bipart_dict[key].values())) + self.alpha *
                         self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] / len(self.clade_double_bipart_dict[key])) /
                        (self.alpha * self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] +
                         self.clade_dict[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()]))) for key in self.clade_double_bipart_dict
@@ -322,7 +322,7 @@ class SBN:
         # Clear the SBN model dictionaries
         self.clade_dict = defaultdict(float)
         self.clade_bipart_dict = defaultdict(lambda: defaultdict(float))
-        total_count = sum(tree_count.values()) * 1.0
+        total_count = sum(list(tree_count.values())) * 1.0
         # Iterate through trees and update with corresponding CCD values.
         for key in tree_count:
             count = tree_count[key]
@@ -359,7 +359,7 @@ class SBN:
         self.clade_dict = defaultdict(float)
         self.clade_bipart_dict = defaultdict(lambda: defaultdict(float))
         self.clade_double_bipart_dict = defaultdict(lambda: defaultdict(float))
-        total_count = sum(tree_count.values()) * 1.0
+        total_count = sum(list(tree_count.values())) * 1.0
 
         # Iterate over the trees and update the model dictionaries, weighted by tree count.
         for key in tree_count:
@@ -587,7 +587,7 @@ class SBN:
                 curr_logp += self.logprior()
             logp.append(curr_logp)
             if monitor:
-                print "Iter {}: current per tree log-likelihood {:.06f}".format(k + 1, curr_logp)
+                print("Iter {}: current per tree log-likelihood {:.06f}".format(k + 1, curr_logp))
 
             self.set_clade_bipart(clade_dict, clade_bipart_dict, clade_double_bipart_dict)
 
@@ -617,7 +617,7 @@ class SBN:
         :return: The log-likelihood.
         """
         self.bn_train_count(tree_count, tree_id)
-        total_count = sum(tree_count.values()) * 1.0
+        total_count = sum(list(tree_count.values())) * 1.0
         logp = []
 
         for k in range(maxiter):
@@ -640,7 +640,7 @@ class SBN:
                 curr_logp += self.logprior()
             logp.append(curr_logp)
             if monitor:
-                print "Iter: {}: current per tree log-likelihood {:.06f}".format(k + 1, curr_logp)
+                print("Iter: {}: current per tree log-likelihood {:.06f}".format(k + 1, curr_logp))
 
             self.set_clade_bipart(clade_dict, clade_bipart_dict, clade_double_bipart_dict)
 
@@ -947,7 +947,7 @@ class SBN:
         :param MAP: boolean (default False) whether to regularize or not.
         :return: the unrooted tree likelihood Pr(T^u).
         """
-        return np.sum(self._bn_estimate_fast(tree, MAP).values())
+        return float(np.sum(list(self._bn_estimate_fast(tree, MAP).values())))
 
     def kl_div(self, method='all', MAP=False):
         """Calculates the KL-Divergence of the different SBN backends relative to truth.
@@ -961,7 +961,7 @@ class SBN:
         :return: dictionary mapping method to value of KL-divergence.
         """
         kl_div = defaultdict(float)
-        for tree, wts in self.emp_tree_freq.iteritems():
+        for tree, wts in self.emp_tree_freq.items():
             if method in ['ccd', 'all']:
                 kl_div['ccd'] += wts * np.log(max(self.ccd_estimate(tree), EPS))
             if method in ['bn', 'all']:
