@@ -155,23 +155,34 @@ class SBN:
 
         :return: float containing the value of the prior.
         """
-        return self.alpha * sum([
+        return (self.alpha * sum([
             self.clade_freq_est[key] * np.log((self.clade_dict[key] + self.alpha * self.clade_freq_est[key]) / (1.0 + self.alpha))
             for key in self.clade_dict
         ]) + sum([
             self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()] /
-            len(self.clade_double_bipart_dict[key]) * np.sum(
+            len(self.clade_double_bipart_dict[key]) *
+
+            np.sum(
                 np.log((np.array(list(self.clade_double_bipart_dict[key].values())) + self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(
                     key).to01()][self._decomp_minor_bitarr(key).to01()] / len(self.clade_double_bipart_dict[key])) /
                        (self.alpha * self.clade_bipart_freq_est[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()] +
-                        self.clade_bipart_dict[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()])))
+                        self.clade_bipart_dict[self._merge_bitarr(key).to01()][self._decomp_minor_bitarr(key).to01()]))
+
+            )
             if self._merge_bitarr(key).to01() != '1' * self.ntaxa else self.alpha *
             self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] / len(self.clade_double_bipart_dict[key]) * np.sum(
-                np.log((np.array(list(self.clade_double_bipart_dict[key].values())) + self.alpha *
+                np.log(
+
+                    (
+
+                            np.array(list(self.clade_double_bipart_dict[key].values()))
+                            + self.alpha *
                         self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] / len(self.clade_double_bipart_dict[key])) /
+
                        (self.alpha * self.clade_freq_est[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()] +
+
                         self.clade_dict[self._minor_bitarr(bitarray(key[:self.ntaxa])).to01()]))) for key in self.clade_double_bipart_dict
-        ])
+        ]))
 
     def clade_update(self, tree, wts):
         """Updates clade distribution.
@@ -350,6 +361,9 @@ class SBN:
     def bn_train_count(self, tree_count, tree_id):
         """Extracts the conditional subsplit distributions (CSDs) from sample trees and stores them in the SBN object.
 
+        Note: This method is for simulated data when tree conts are available.
+        Note: Same method exist for empirical data when probs are available from a MCMC run.
+
         :param tree_count: dictionary mapping tree topology ID to count
         of that tree in the sample.
         :param tree_id: dictionary mapping tree topology ID to a
@@ -381,6 +395,9 @@ class SBN:
 
     def bn_train_prob(self, tree_dict, tree_names, tree_wts):
         """Extracts the conditional subsplit distributions (CSDs) from tree probabilities and stores them in the SBN object.
+
+        Note: This method is for empirical data when probabilities are available from a MCMC run.
+        Note: Same method exist for simulated data based on tree counts.
 
         :param tree_dict: dictionary mapping tree topology ID to count
         of that tree in the sample.
@@ -550,6 +567,9 @@ class SBN:
     def bn_em_prob(self, tree_dict, tree_names, tree_wts, maxiter=100, miniter=50, abstol=1e-04, monitor=False, MAP=False):
         """Run EM-algorithm on a set of unrooted tree probability data.
 
+        Note: This method is for empirical data when probabilities are available from a MCMC run.
+        Note: Same method exist for simulated data based on tree counts.
+
         :param tree_dict: Dictionary where keys are tree topology IDs
         and the values are integers representing how many times that
         tree appeared in the sample data.
@@ -598,6 +618,9 @@ class SBN:
 
     def bn_em_count(self, tree_count, tree_id, maxiter=100, miniter=50, abstol=1e-04, monitor=False, MAP=False):
         """Run EM-algorithm on a set of unrooted tree count data.
+
+        Note: This method is for simulated data when tree conts are available.
+        Note: Same method exist for empirical data when probs are available from a MCMC run.
 
         :param tree_count: Dictionary where keys are tree topology IDs
         and the values are integers representing how many times that
@@ -695,6 +718,14 @@ class SBN:
                         nodetobitMap[sister] = sister_bitarr
 
                     bipart_bitarr = min([nodetobitMap[sister] for sister in child_1.get_sisters()])
+
+                    # Note: ~child_1_bitarr is the bitarray representation which includes taxa that is not in child_1.
+                    # Note: This access other subsplits as the root include 3 children.
+                    # Note: clade_bipart_dict store ccd values inform of clade_bipart_dict[x][y].
+                    # Note: Here x is parent subsplit and y is child subsplit. Here, this strategy us used se there could
+                    # be multiple different subsplits starting from same parent. eg: ((A,B),(C,D)) and (A,(B,(C,D)))
+                    # Note: clade_bipart_dict only need to store one unique value to reprint a subsplit. This is done using
+                    # storing min of two child subsplits.
                     ccd_est *= self.clade_bipart_dict[(~child_1_bitarr).to01()][bipart_bitarr.to01()]
                 else:
                     for child in node.children:
@@ -968,7 +999,7 @@ class SBN:
                 kl_div['bn'] += wts * np.log(max(self.bn_estimate(tree, MAP), EPS))
             if method in ['freq', 'all']:
                 kl_div['freq'] += wts * np.log(max(self.samp_tree_freq[tree.get_topology_id()], EPS))
-
+        # Note: kl_div = kl(p(x)|| q(x)) = E_(p(x)(log(p(x)) - log(q(x)) where p(x) is the ground truth and q(x) is predicted distribution.
         for key in kl_div:
             kl_div[key] = self.negDataEnt - kl_div[key]
 
